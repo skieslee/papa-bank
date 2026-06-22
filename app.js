@@ -454,12 +454,17 @@
       var sign = tx.type === "withdraw" ? "−" : "+";
       var amtClass = tx.type === "deposit" ? "plus" : tx.type === "withdraw" ? "minus" : "interest";
       var title = tx.type === "interest" ? t("noteInterest") : (tx.note || "");
+      var editHint = isParent() ? '<div class="hi-edit">✎</div>' : "";
       li.innerHTML =
         '<div class="hi-icon ' + tx.type + '">' + icon + "</div>" +
         '<div class="hi-main"><div class="hi-title">' + escapeHtml(title) + "</div>" +
         '<div class="hi-sub">' + fmtDate(tx.ts) + "</div></div>" +
         '<div style="text-align:right"><div class="hi-amount ' + amtClass + '">' + sign + nf(tx.amount) + "</div>" +
-        '<div class="hi-bal">' + t("balAfter", money(tx._bal)) + "</div></div>";
+        '<div class="hi-bal">' + t("balAfter", money(tx._bal)) + "</div></div>" + editHint;
+      if (isParent()) {
+        li.className = "history-item editable";
+        li.onclick = function () { openEditTx(acc, tx); };
+      }
       list.appendChild(li);
     });
 
@@ -481,10 +486,12 @@
     document.getElementById("modal-ok").textContent = okText || t("ok");
     document.getElementById("modal-cancel").textContent = t("cancel");
     modal.classList.remove("hidden");
+    document.body.classList.add("modal-open"); // 鎖住背景，避免捲動跑到主頁面
+    modal.onclick = function (e) { if (e.target === modal) closeModal(); }; // 點背景關閉
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("modal-ok").onclick = function () { if (onOk() !== false) closeModal(); };
   }
-  function closeModal() { document.getElementById("modal").classList.add("hidden"); }
+  function closeModal() { document.getElementById("modal").classList.add("hidden"); document.body.classList.remove("modal-open"); }
 
   function amountField() {
     var qs = [10, 50, 100, 500].map(function (v) { return '<button type="button" data-amt="' + v + '">+' + v + "</button>"; }).join("");
@@ -544,6 +551,42 @@
       var gAmt = clampAmount(document.getElementById("m-goalamt").value);
       addAccount(name, rate / 100, gName, gAmt);
     }, t("create"));
+  }
+
+  function toLocalInput(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+  // 爸爸模式：點一筆明細 → 修改金額／備註／日期，或刪除這一筆
+  function openEditTx(acc, tx) {
+    if (!isParent()) return;
+    var step = state.decimals > 0 ? (1 / Math.pow(10, state.decimals)) : 1;
+    var typeLabel = tx.type === "deposit" ? t("noteDeposit") : tx.type === "withdraw" ? t("noteWithdraw") : t("noteInterest");
+    var body =
+      '<div class="modal-note">' + t("txType") + "：" + typeLabel + "</div>" +
+      '<div class="modal-body-row"><label>' + t("fieldAmount") + "</label>" +
+      '<input id="e-amount" type="number" inputmode="decimal" min="0" max="' + MAX_AMOUNT + '" step="' + step + '" value="' + tx.amount + '" /></div>' +
+      '<div class="modal-body-row"><label>' + t("fieldNote") + "</label>" +
+      '<input id="e-note" type="text" maxlength="' + NOTE_MAX + '" value="' + escapeHtml(tx.note || "") + '" /></div>' +
+      '<div class="modal-body-row"><label>' + t("fieldDate") + "</label>" +
+      '<input id="e-date" type="datetime-local" value="' + toLocalInput(tx.ts) + '" /></div>' +
+      '<div class="modal-body-row"><button type="button" id="e-delete" class="btn btn-ghost danger-text">' + t("deleteTx") + "</button></div>";
+    openModal(t("editTxTitle"), body, function () {
+      var amt = validAmount(document.getElementById("e-amount").value);
+      if (isNaN(amt)) { toast(t("badAmount")); return false; }
+      if (amt === Infinity) { toast(t("amountTooBig")); return false; }
+      tx.amount = amt;
+      tx.note = document.getElementById("e-note").value.trim().slice(0, NOTE_MAX);
+      var ds = document.getElementById("e-date").value;
+      var newTs = ds ? new Date(ds).getTime() : tx.ts;
+      if (isFinite(newTs)) tx.ts = newTs;
+      historyPage = 0; save(); toast(t("txUpdated"));
+    }, t("save"));
+    document.getElementById("e-delete").onclick = function () {
+      if (!confirm(t("confirmDeleteTx"))) return;
+      acc.transactions = acc.transactions.filter(function (x) { return x.id !== tx.id; });
+      save(); closeModal(); toast(t("txDeleted"));
+    };
   }
 
   function openSettings() {

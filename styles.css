@@ -149,6 +149,9 @@ body {
 .hi-amount.minus { color: var(--red); }
 .hi-amount.interest { color: var(--gold); }
 .hi-bal { font-size: 11px; color: var(--muted); text-align: right; }
+.history-item.editable { cursor: pointer; }
+.history-item.editable:active { background: #eef3f1; }
+.hi-edit { color: var(--muted); font-size: 14px; align-self: center; margin-left: 2px; flex: 0 0 auto; }
 .empty { text-align: center; color: var(--muted); padding: 24px 10px; font-size: 14px; }
 
 /* ---------- 面板（趨勢圖 / 月結） ---------- */
@@ -190,8 +193,11 @@ body {
 .modal-card {
   width: 100%; max-width: 380px; background: var(--card);
   border-radius: var(--radius); padding: 22px;
+  max-height: 88vh; display: flex; flex-direction: column;
 }
-.modal-card h3 { margin: 0 0 16px; font-size: 18px; }
+.modal-card h3 { margin: 0 0 16px; font-size: 18px; flex: 0 0 auto; }
+#modal-body { overflow-y: auto; flex: 1 1 auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+body.modal-open { overflow: hidden; }
 .modal-body-row { margin-bottom: 14px; }
 .modal-body-row label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 .modal-body-row input, .modal-body-row select {
@@ -203,7 +209,7 @@ body {
   border: 1px solid var(--line); background: #fff; border-radius: 999px;
   padding: 6px 14px; font-size: 14px; cursor: pointer; color: var(--primary);
 }
-.modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; flex: 0 0 auto; }
 .modal-actions .btn { flex: 1; }
 .modal-note { font-size: 12px; color: var(--muted); margin-top: -4px; margin-bottom: 12px; }
 .data-btn {
