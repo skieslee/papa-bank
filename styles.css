@@ -1,0 +1,222 @@
+:root {
+  --bg: #f3f5f4;
+  --card: #ffffff;
+  --primary: #0e7c66;
+  --primary-dark: #0a5c4c;
+  --secondary: #f0a202;
+  --text: #1c2b28;
+  --muted: #6b7c78;
+  --line: #e4e9e7;
+  --green: #1a9b6e;
+  --red: #d65745;
+  --gold: #c98a00;
+  --shadow: 0 4px 18px rgba(14, 124, 102, 0.10);
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  margin: 0;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- 登入 ---------- */
+.login {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.login-card {
+  width: 100%; max-width: 360px;
+  background: var(--card); border-radius: var(--radius);
+  padding: 28px 24px; box-shadow: var(--shadow);
+  text-align: center;
+}
+.login-card .brand { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+.login-hint { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+.login input {
+  width: 100%; padding: 12px 14px; margin-bottom: 12px;
+  border: 1px solid var(--line); border-radius: 10px; font-size: 16px;
+}
+.login-error { color: var(--red); font-size: 13px; min-height: 18px; margin-top: 6px; }
+
+/* ---------- 主框架 ---------- */
+.app { max-width: 520px; margin: 0 auto; min-height: 100vh; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--primary); color: #fff;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar .brand { font-size: 19px; font-weight: 800; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.badge {
+  font-size: 11px; background: rgba(255,255,255,.22);
+  padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+}
+.badge.cloud { background: var(--secondary); color: #3a2c00; font-weight: 700; }
+.icon-btn {
+  background: rgba(255,255,255,.15); border: none; color: #fff;
+  width: 34px; height: 34px; border-radius: 10px; font-size: 16px; cursor: pointer;
+}
+
+/* ---------- 分頁 ---------- */
+.tabs {
+  display: flex; gap: 8px; padding: 12px 14px; overflow-x: auto;
+  background: var(--card); border-bottom: 1px solid var(--line);
+}
+.tab {
+  flex: 0 0 auto; padding: 8px 16px; border-radius: 999px;
+  border: 1px solid var(--line); background: #fff; color: var(--muted);
+  font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tab.add { color: var(--primary); border-style: dashed; }
+
+/* ---------- 餘額卡 ---------- */
+.main { padding: 16px 14px 40px; }
+.balance-card {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff; border-radius: var(--radius); padding: 26px 22px;
+  box-shadow: var(--shadow); text-align: center;
+}
+.balance-label { font-size: 14px; opacity: .85; }
+.balance-amount { font-size: 44px; font-weight: 800; letter-spacing: .5px; margin: 4px 0 14px; }
+.balance-meta { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+.pill {
+  font-size: 12px; background: rgba(255,255,255,.20);
+  padding: 4px 12px; border-radius: 999px;
+}
+.pill-soft { background: rgba(255,255,255,.12); }
+/* 存款目標進度條（在餘額卡內） */
+.goal { margin-bottom: 18px; text-align: left; }
+.goal-top {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  font-size: 12px; color: #fff; opacity: .95; margin-bottom: 6px;
+}
+.goal-top span:last-child { white-space: nowrap; opacity: .9; }
+.goal-track { height: 10px; background: rgba(255,255,255,.22); border-radius: 999px; overflow: hidden; }
+.goal-fill {
+  height: 100%; background: var(--secondary); border-radius: 999px;
+  transition: width .4s ease; min-width: 2px;
+}
+.goal-fill.done { background: #ffe08a; }
+
+.actions { display: flex; gap: 12px; }
+.actions .btn { flex: 1; }
+
+/* ---------- 按鈕 ---------- */
+.btn {
+  border: none; border-radius: 12px; padding: 13px 16px;
+  font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: transform .05s ease, opacity .15s ease;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: #fff; color: var(--primary); }
+.balance-card .btn-primary { background: #fff; color: var(--primary); }
+.btn-secondary { background: rgba(255,255,255,.20); color: #fff; }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-block { width: 100%; }
+.modal .btn-primary { background: var(--primary); color: #fff; }
+
+/* ---------- 明細 ---------- */
+.history { margin-top: 24px; }
+.section-title { font-size: 15px; color: var(--muted); margin: 0 4px 10px; }
+.history-list { list-style: none; margin: 0; padding: 0; }
+.history-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+}
+.hi-icon {
+  width: 38px; height: 38px; border-radius: 10px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.hi-icon.deposit { background: #e3f4ec; }
+.hi-icon.withdraw { background: #fbe7e3; }
+.hi-icon.interest { background: #fbf2dc; }
+.hi-main { flex: 1; min-width: 0; }
+.hi-title { font-weight: 600; font-size: 15px; }
+.hi-sub { font-size: 12px; color: var(--muted); }
+.hi-amount { font-weight: 800; font-size: 16px; white-space: nowrap; }
+.hi-amount.plus { color: var(--green); }
+.hi-amount.minus { color: var(--red); }
+.hi-amount.interest { color: var(--gold); }
+.hi-bal { font-size: 11px; color: var(--muted); text-align: right; }
+.empty { text-align: center; color: var(--muted); padding: 24px 10px; font-size: 14px; }
+
+/* ---------- 面板（趨勢圖 / 月結） ---------- */
+.panel { margin-top: 22px; }
+.chart {
+  background: var(--card); border-radius: var(--radius); padding: 10px 8px 4px;
+}
+.chart-svg { width: 100%; height: auto; display: block; }
+.chart-svg .ax { font-size: 9px; fill: var(--muted); }
+.chart-svg .val { font-size: 11px; font-weight: 700; fill: var(--primary); }
+.chart-svg .dot { fill: #fff; stroke: var(--primary); stroke-width: 2; }
+
+.monthly { background: var(--card); border-radius: var(--radius); padding: 6px 4px; overflow-x: auto; }
+.m-row {
+  display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr;
+  gap: 4px; padding: 9px 12px; font-size: 13px; align-items: center;
+  border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.m-row:last-child { border-bottom: none; }
+.m-row span:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.m-head { color: var(--muted); font-size: 11px; font-weight: 700; }
+.m-row .plus { color: var(--green); }
+.m-row .minus { color: var(--red); }
+.m-row .interest { color: var(--gold); }
+
+/* ---------- 分頁 ---------- */
+.pager {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  margin-top: 6px; font-size: 13px; color: var(--muted);
+}
+.pager .btn { padding: 6px 16px; font-size: 18px; background: var(--card); border-radius: 10px; }
+.pager .btn:disabled { opacity: .35; }
+
+/* ---------- 對話框 ---------- */
+.modal {
+  position: fixed; inset: 0; background: rgba(20,30,28,.45);
+  display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+}
+.modal-card {
+  width: 100%; max-width: 380px; background: var(--card);
+  border-radius: var(--radius); padding: 22px;
+}
+.modal-card h3 { margin: 0 0 16px; font-size: 18px; }
+.modal-body-row { margin-bottom: 14px; }
+.modal-body-row label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.modal-body-row input, .modal-body-row select {
+  width: 100%; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 10px; font-size: 16px; font-family: inherit;
+}
+.quick-amounts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.quick-amounts button {
+  border: 1px solid var(--line); background: #fff; border-radius: 999px;
+  padding: 6px 14px; font-size: 14px; cursor: pointer; color: var(--primary);
+}
+.modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+.modal-actions .btn { flex: 1; }
+.modal-note { font-size: 12px; color: var(--muted); margin-top: -4px; margin-bottom: 12px; }
+.data-btn {
+  display: block; width: 100%; text-align: left; font-size: 14px;
+  background: #fff; color: var(--text); border: 1px solid var(--line);
+  border-radius: 10px; margin-bottom: 8px; padding: 11px 14px;
+}
+.danger-text { color: var(--red); }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%);
+  background: var(--text); color: #fff; padding: 12px 20px;
+  border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 60;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25); max-width: 90%; text-align: center;
+}

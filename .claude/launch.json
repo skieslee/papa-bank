@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "papa-bank",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5188"],
+      "port": 5188
+    }
+  ]
+}

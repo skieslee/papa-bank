@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0e7c66" />
+  <title>爸爸銀行 papa-bank</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 登入畫面（只有雲端同步模式才會出現） -->
+  <div id="login" class="login hidden">
+    <div class="login-card">
+      <div class="brand">🏦 <span id="login-brand">爸爸銀行</span></div>
+      <p class="login-hint" id="login-hint"></p>
+      <input id="login-email" type="email" placeholder="Email" autocomplete="username" />
+      <input id="login-pw" type="password" autocomplete="current-password" />
+      <button id="login-btn" class="btn btn-primary btn-block"></button>
+      <div id="login-error" class="login-error"></div>
+    </div>
+  </div>
+
+  <!-- 主畫面 -->
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <div class="brand">🏦 <span id="brand-text">爸爸銀行</span></div>
+      <div class="topbar-right">
+        <span id="mode-badge" class="badge">本機模式</span>
+        <button id="lang-btn" class="icon-btn" title="語言 / Language">中</button>
+        <button id="lock-btn" class="icon-btn" title="家長鎖">🔓</button>
+        <button id="settings-btn" class="icon-btn" title="設定">⚙️</button>
+      </div>
+    </header>
+
+    <!-- 存款人分頁 -->
+    <nav id="tabs" class="tabs"></nav>
+
+    <main class="main">
+      <!-- 餘額卡 -->
+      <section class="balance-card">
+        <div class="balance-label" id="balance-label">目前餘額</div>
+        <div id="balance" class="balance-amount">NT$0</div>
+        <div class="balance-meta">
+          <span id="rate-pill" class="pill">年息 0%</span>
+          <span id="next-interest" class="pill pill-soft"></span>
+        </div>
+        <div id="goal" class="goal hidden"></div>
+        <div class="actions">
+          <button id="deposit-btn" class="btn btn-primary">＋ 存款</button>
+          <button id="withdraw-btn" class="btn btn-secondary">－ 提款</button>
+        </div>
+      </section>
+
+      <!-- 餘額趨勢圖 -->
+      <section class="panel">
+        <h2 class="section-title" id="trend-title">每月餘額趨勢</h2>
+        <div id="chart" class="chart"></div>
+      </section>
+
+      <!-- 每月收支 -->
+      <section class="panel">
+        <h2 class="section-title" id="monthly-title">每月收支</h2>
+        <div id="monthly" class="monthly"></div>
+      </section>
+
+      <!-- 明細 -->
+      <section class="history">
+        <h2 class="section-title" id="history-title">交易明細</h2>
+        <ul id="history-list" class="history-list"></ul>
+        <div id="history-empty" class="empty"></div>
+        <div id="pager" class="pager hidden">
+          <button id="pager-prev" class="btn btn-ghost">‹</button>
+          <span id="pager-info"></span>
+          <button id="pager-next" class="btn btn-ghost">›</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 通用對話框 -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <h3 id="modal-title">標題</h3>
+      <div id="modal-body"></div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn btn-ghost">取消</button>
+        <button id="modal-ok" class="btn btn-primary">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 浮動提示 -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

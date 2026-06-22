@@ -1,0 +1,10 @@
+# Firebase 部署快取
+.firebase/
+*.log
+
+# 相依套件（若之後有用到）
+node_modules/
+
+# 作業系統 / 編輯器雜檔
+.DS_Store
+Thumbs.db
