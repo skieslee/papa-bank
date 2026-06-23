@@ -54,9 +54,10 @@
 > 用量極小，屬於 Firebase 免費方案（Spark），長期免費、不需綁信用卡。
 
 1. 到 <https://console.firebase.google.com> 用 Google 帳號登入，點 **新增專案**，名字隨意。
-2. 進專案後，點左上齒輪 → **專案設定 → 一般** → 最下方「你的應用程式」選 **Web（</>）**，
+2. 先把 **`firebase-config.example.js`** 複製成 **`firebase-config.js`**（真正的設定檔已被 gitignore，金鑰不會上 GitHub）。
+   再進專案，點左上齒輪 → **專案設定 → 一般** → 最下方「你的應用程式」選 **Web（</>）**，
    取個暱稱、建立，會看到一段 `firebaseConfig`。把裡面的
-   `apiKey / authDomain / projectId / appId` 複製到本專案的 **`firebase-config.js`**。
+   `apiKey / authDomain / projectId / appId` 複製到 **`firebase-config.js`**。
 3. 左側選單 **建構 → Authentication → 開始使用 → 選「電子郵件/密碼」並啟用**。
 4. 左側選單 **建構 → Firestore Database → 建立資料庫**（選正式版 / 離你近的地區）。
 5. 在 Firestore 的 **規則（Rules）** 分頁，貼上下面這段並發布（只有登入者能存取自己的資料）：

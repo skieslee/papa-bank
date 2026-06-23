@@ -1,4 +1,4 @@
-/* 中英文字典。值可以是字串，或 (……參數) => 字串 的函式。 */
+/* EN/ZH dictionary. A value can be a string, or a (...args) => string function. */
 var I18N = {
   zh: {
     brand: "爸爸銀行",
@@ -6,7 +6,7 @@ var I18N = {
     modeCloud: "雲端同步",
     syncError: "⚠️ 同步異常",
     syncFailed: "⚠️ 同步失敗，這筆可能沒存到雲端，請稍後再試",
-    // 登入
+    // Login
     loginHint: "雲端同步模式：請用家庭帳號登入，所有裝置共用同一份資料。",
     pwPlaceholder: "密碼（至少 6 碼）",
     loginBtn: "登入 / 註冊",
@@ -14,7 +14,7 @@ var I18N = {
     loginFail: function (m) { return "登入失敗：" + m; },
     signupFail: function (m) { return "註冊失敗：" + m; },
     loginWrong: "這個 Email 已註冊，但密碼不對",
-    // 餘額卡
+    // Balance card
     balanceLabel: "目前餘額",
     rate: function (r) { return "年息 " + r + "%"; },
     rateUnset: "未設定利息",
@@ -22,7 +22,7 @@ var I18N = {
     withdraw: "－ 提款",
     addPerson: "＋ 新增存款人",
     pickPersonFirst: "請先新增存款人",
-    // 趨勢圖 / 月結
+    // Chart / monthly
     trendTitle: "每月餘額趨勢",
     monthlyTitle: "每月收支",
     notEnoughData: "資料還不夠，下個月就會出現趨勢了。",
@@ -31,7 +31,7 @@ var I18N = {
     colInterest: "利息",
     colOut: "支出",
     colNet: "淨變化",
-    // 明細
+    // History
     historyTitle: "交易明細",
     emptyHistory: "還沒有任何紀錄，按「存款」開始吧！",
     noteDeposit: "存款",
@@ -46,7 +46,7 @@ var I18N = {
     txDeleted: "已刪除這一筆",
     balAfter: function (v) { return "餘 " + v; },
     pagerInfo: function (a, b) { return a + " / " + b + " 頁"; },
-    // 動作提示
+    // Action toasts
     deposited: function (v) { return "存入 " + v + " 🎉"; },
     withdrew: function (v) { return "提出 " + v; },
     creditedToast: function (v) { return "配息 +" + v + " ✨"; },
@@ -57,21 +57,21 @@ var I18N = {
     needName: "請輸入名字",
     saved: "已儲存設定",
     deleted: "已刪除",
-    // 對話框：存提款
+    // Modal: deposit / withdraw
     depositTo: function (n) { return "存款給 " + n; },
     withdrawFrom: function (n) { return "從 " + n + " 提款"; },
     fieldAmount: "金額",
     amountPlaceholder: "輸入金額",
     fieldNote: "備註（可不填）",
     notePlaceholder: "例如：洗碗獎勵 / 買玩具",
-    // 對話框：新增存款人
+    // Modal: add saver
     addTitle: "新增存款人",
     fieldPersonName: "存款人名字",
     namePlaceholder: "例如：小明",
     fieldRate: "年息（%）",
     rateHint: "年息可之後在「⚙️設定」隨時調整。",
     create: "建立",
-    // 設定
+    // Settings
     settingsTitle: "設定",
     fieldPeriod: "配息頻率（所有人共用）",
     periodHint: "「每分鐘」是教學/測試用，可在幾分鐘內看到複利長大。",
@@ -83,7 +83,7 @@ var I18N = {
     dec0: "整數（NT$73）",
     dec1: "1 位（NT$73.5）",
     dec2: "2 位（NT$73.50）",
-    // 存款目標
+    // Savings goal
     fieldGoalName: "存款目標名稱（可不填）",
     goalNamePlaceholder: "例如：買樂高",
     fieldGoalAmount: "目標金額（0＝不設定）",
@@ -96,7 +96,7 @@ var I18N = {
     deletePerson: function (n) { return "刪除存款人「" + n + "」"; },
     confirmDelete: function (n) { return "確定要刪除「" + n + "」？所有明細會一起消失，無法復原。"; },
     save: "儲存",
-    // 模式（兒童＝預設唯讀 / 爸爸＝認證後可編輯）
+    // Modes (kid = default read-only / parent = editable after auth)
     childMode: "兒童模式（唯讀）",
     parentMode: "爸爸模式（點此鎖定）",
     childNoData: "請按右上角 🔒 進入爸爸模式來新增存款人",
@@ -110,7 +110,7 @@ var I18N = {
     enteredParent: "已進入爸爸模式 👨",
     backToChild: "已回到兒童模式 🔒",
     autoLocked: "閒置太久，已自動回到兒童模式 🔒",
-    // 資料備份
+    // Data & backup
     dataSection: "資料備份",
     exportCsv: "⬇ 匯出明細 CSV（Excel 可開）",
     exportBackup: "⬇ 匯出完整備份（JSON）",
@@ -120,10 +120,10 @@ var I18N = {
     restoreFail: "檔案格式不正確，無法還原",
     exported: "已匯出 ✅",
     hDate: "日期", hType: "類型", hAmount: "金額", hNote: "備註", hBalance: "餘額",
-    // 通用
+    // Common
     cancel: "取消",
     ok: "確定",
-    // 下次配息
+    // Next interest
     nextSec: function (n) { return "下次配息 約 " + n + " 秒後"; },
     nextHour: function (n) { return "下次配息 約 " + n + " 小時後"; },
     nextDay: function (n) { return "下次配息 約 " + n + " 天後"; }

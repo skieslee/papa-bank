@@ -1,10 +1,14 @@
-# Firebase 部署快取
+# Real Firebase config (keep your keys out of the repo).
+# Copy firebase-config.example.js to firebase-config.js and fill it in.
+firebase-config.js
+
+# Firebase deploy cache
 .firebase/
 *.log
 
-# 相依套件（若之後有用到）
+# Dependencies (if ever used)
 node_modules/
 
-# 作業系統 / 編輯器雜檔
+# OS / editor cruft
 .DS_Store
 Thumbs.db

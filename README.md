@@ -55,7 +55,7 @@ On a phone, use the browser's "Add to Home Screen" so it behaves like an app.
 > Usage is tiny — it stays within Firebase's free Spark plan, free long-term, no credit card needed.
 
 1. Go to <https://console.firebase.google.com>, sign in with a Google account, click **Add project**.
-2. Inside the project: gear icon → **Project settings → General** → under "Your apps" pick **Web (</>)**, give it a nickname, create it, and you'll see a `firebaseConfig`. Copy `apiKey / authDomain / projectId / appId` into **`firebase-config.js`**.
+2. Copy **`firebase-config.example.js`** to **`firebase-config.js`** (this real-config file is gitignored, so your keys never go to GitHub). Then in the project: gear icon → **Project settings → General** → under "Your apps" pick **Web (</>)**, give it a nickname, create it, and you'll see a `firebaseConfig`. Copy `apiKey / authDomain / projectId / appId` into **`firebase-config.js`**.
 3. Left menu **Build → Authentication → Get started → enable "Email/Password"**.
 4. Left menu **Build → Firestore Database → Create database** (production mode / a region near you).
 5. In the Firestore **Rules** tab, paste and publish this (only signed-in users can access their own data):

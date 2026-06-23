@@ -1,22 +1,22 @@
 /* ====================================================================
-   爸爸銀行 papa-bank — 主程式（純 JavaScript，無需安裝）
-   功能：存/提款、明細(分頁)、年息自動配息、多存款人、
-        小數位數、每月趨勢圖、每月收支、中英切換、家長唯讀鎖、
-        本機 / Firebase 雲端同步雙模式。
+   papa-bank — main script (vanilla JavaScript, no install needed)
+   Features: deposit/withdraw, history (paginated), auto compound interest,
+             multiple savers, decimals, monthly trend chart, monthly summary,
+             EN/ZH switch, parent read-only lock, Local / Firebase cloud sync.
    ==================================================================== */
 (function () {
   "use strict";
 
   var STORAGE_KEY = "papa-bank-state-v1";
-  var LANG_KEY = "papa-bank-lang";     // 裝置本地（每個人可選自己的語言）
-  var AUTO_LOCK_MS = 3 * 60 * 1000;    // 爸爸模式閒置多久自動回兒童模式
+  var LANG_KEY = "papa-bank-lang";     // device-local (each person can pick their own language)
+  var AUTO_LOCK_MS = 3 * 60 * 1000;    // how long parent mode stays idle before reverting to kid mode
   var MAX_ACCRUE = 5000;
   var PAGE_SIZE = 8;
-  var MAX_ACCOUNTS = 20;        // 存款人上限
-  var MAX_AMOUNT = 1e9;         // 單筆金額上限（10 億）
-  var MAX_RATE_PCT = 1000;      // 年息上限（%）
-  var MONTHS_WINDOW = 24;       // 趨勢圖 / 每月收支最多顯示月數
-  var NAME_MAX = 20, NOTE_MAX = 40; // 文字長度上限
+  var MAX_ACCOUNTS = 20;        // max savers
+  var MAX_AMOUNT = 1e9;         // max single amount (1 billion)
+  var MAX_RATE_PCT = 1000;      // max annual rate (%)
+  var MONTHS_WINDOW = 24;       // max months shown in chart / monthly summary
+  var NAME_MAX = 20, NOTE_MAX = 40; // text length limits
 
   var PERIODS = {
     minute: { ms: 60 * 1000,                divisor: 12 },
@@ -29,9 +29,9 @@
   var isCloud = false;
   var applyingRemote = false;
   var historyPage = 0;
-  var parentMode = false;        // 只存記憶體：重新整理 / 重開都會回到兒童模式
-  var lastActivity = Date.now(); // 給「閒置自動上鎖」用
-  var syncOk = true;             // 雲端同步是否正常（false = 寫入/連線失敗，例如打到額度上限）
+  var parentMode = false;        // in-memory only: reload / reopen returns to kid mode
+  var lastActivity = Date.now(); // used for idle auto-lock
+  var syncOk = true;             // is cloud sync healthy (false = write/connection failed, e.g. quota hit)
 
   // ================= i18n =================
   function getLang() {
@@ -48,7 +48,7 @@
     return v == null ? key : v;
   }
 
-  // ================= 資料模型 =================
+  // ================= Data model =================
   function defaultState() {
     return { version: 2, interestPeriod: "month", decimals: 2, parentPin: "", accounts: [], activeAccountId: null };
   }
@@ -81,7 +81,7 @@
     return roundTo(b, 4);
   }
 
-  // ================= 數字 / 格式 =================
+  // ================= Numbers / formatting =================
   function roundTo(x, d) { var f = Math.pow(10, d); return Math.round(x * f) / f; }
   function nf(n) {
     var d = state ? state.decimals : 0;
@@ -103,14 +103,14 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
     });
   }
-  // 解析有效金額：> 0、有限數、不超過上限；否則回傳 NaN（無效）或 Infinity（太大）
+  // Parse a valid amount: > 0, finite, within cap; otherwise NaN (invalid) or Infinity (too big)
   function validAmount(raw) {
     var n = roundTo(parseFloat(raw), state.decimals);
     if (!isFinite(n) || n <= 0) return NaN;
     if (n > MAX_AMOUNT) return Infinity;
     return n;
   }
-  // 把使用者輸入的金額夾在 [0, 上限]，無效則回傳 0
+  // Clamp a user-entered amount to [0, cap]; invalid returns 0
   function clampAmount(raw) {
     var n = roundTo(parseFloat(raw), state.decimals);
     if (!isFinite(n) || n < 0) return 0;
@@ -133,7 +133,7 @@
   function ymd() { var d = new Date(); return "" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()); }
   function safeFilename(s) { return String(s).replace(/[\\\/:*?"<>|\s]/g, "_"); }
 
-  // ================= 匯出 / 備份 / 還原 =================
+  // ================= Export / backup / restore =================
   function downloadFile(filename, text, mime) {
     var blob = new Blob([text], { type: (mime || "text/plain") + ";charset=utf-8" });
     var url = URL.createObjectURL(blob);
@@ -157,7 +157,7 @@
       var amt = (x.type === "withdraw" ? "-" : "") + x.amount;
       rows.push([fmtDateFull(x.ts), typeLabel, amt, x.note || "", roundTo(run, state.decimals)]);
     });
-    var BOM = String.fromCharCode(0xFEFF); // Excel 需要 BOM 才能正確顯示中文
+    var BOM = String.fromCharCode(0xFEFF); // Excel needs a BOM to display non-ASCII text correctly
     var csv = BOM + rows.map(function (r) { return r.map(csvCell).join(","); }).join("\r\n");
     downloadFile("papa-bank-" + safeFilename(acc.name) + "-" + ymd() + ".csv", csv, "text/csv");
     toast(t("exported"));
@@ -177,7 +177,7 @@
     reader.readAsText(file);
   }
 
-  // ================= 利息 =================
+  // ================= Interest =================
   function accrueInterest() {
     var now = Date.now();
     var p = PERIODS[state.interestPeriod] || PERIODS.month;
@@ -210,7 +210,7 @@
     return t("nextDay", Math.max(1, Math.ceil(remain / 86400000)));
   }
 
-  // ================= 動作 =================
+  // ================= Actions =================
   function addAccount(name, rateAnnual, goalName, goalAmount) {
     var now = Date.now();
     var acc = { id: uid(), name: name, rateAnnual: rateAnnual, goalName: goalName || "", goalAmount: goalAmount || 0,
@@ -229,12 +229,12 @@
     historyPage = 0; save(); toast(t("withdrew", money(amount)));
   }
 
-  // ================= 模式：預設兒童（唯讀），認證後才是爸爸模式 =================
+  // ========== Modes: kid (read-only) by default; parent mode after auth ==========
   function isParent() { return parentMode; }
   function enterParent() { parentMode = true; lastActivity = Date.now(); }
   function leaveParent() { parentMode = false; }
 
-  // ================= 渲染 =================
+  // ================= Rendering =================
   function applyStaticI18n() {
     document.documentElement.lang = getLang() === "en" ? "en" : "zh-Hant";
     document.getElementById("brand-text").textContent = t("brand");
@@ -246,14 +246,14 @@
     document.getElementById("history-title").textContent = t("historyTitle");
     document.getElementById("lang-btn").textContent = getLang() === "en" ? "EN" : "中";
     updateModeBadge();
-    // 登入畫面
+    // Login screen
     document.getElementById("login-brand").textContent = t("brand");
     document.getElementById("login-hint").textContent = t("loginHint");
     document.getElementById("login-pw").placeholder = t("pwPlaceholder");
     document.getElementById("login-btn").textContent = t("loginBtn");
   }
 
-  // 右上徽章：本機 / 雲端同步 / 同步異常
+  // Top-right badge: Local / Synced / Sync issue
   function updateModeBadge() {
     var b = document.getElementById("mode-badge");
     if (!b) return;
@@ -339,15 +339,15 @@
       '<div class="goal-track"><div class="goal-fill' + (done ? " done" : "") + '" style="width:' + pct + '%"></div></div>';
   }
 
-  // 每月：累積月底餘額（給趨勢圖）與每月收支
+  // Monthly: cumulative month-end balance (for the chart) and per-month in/out
   function monthSeries(acc) {
     if (acc.transactions.length === 0) return { keys: [], balances: [], stats: {} };
     var txs = acc.transactions.slice().sort(function (a, b) { return a.ts - b.ts; });
     var first = new Date(txs[0].ts), now = new Date();
-    // 用「絕對月份序號」計算，並限制成最近 MONTHS_WINDOW 個月，避免列表無限長或時間戳異常時暴增
+    // Use an absolute month index, limited to the last MONTHS_WINDOW months, so the list can't grow forever or blow up on a bad timestamp
     var firstIdx = first.getFullYear() * 12 + first.getMonth();
     var nowIdx = now.getFullYear() * 12 + now.getMonth();
-    if (nowIdx < firstIdx) nowIdx = firstIdx; // 防呆：交易在未來
+    if (nowIdx < firstIdx) nowIdx = firstIdx; // guard: transaction dated in the future
     var startIdx = Math.max(firstIdx, nowIdx - (MONTHS_WINDOW - 1));
     var keys = [], stats = {};
     for (var idx = startIdx; idx <= nowIdx; idx++) {
@@ -355,7 +355,7 @@
       keys.push(key);
       stats[key] = { in: 0, interest: 0, out: 0, end: 0 };
     }
-    // 每月收支
+    // Per-month in/out
     txs.forEach(function (x) {
       var s = stats[ymKey(x.ts)];
       if (!s) return;
@@ -363,7 +363,7 @@
       else if (x.type === "interest") s.interest += x.amount;
       else s.out += x.amount;
     });
-    // 月底累積餘額
+    // Cumulative month-end balance
     var balances = keys.map(function (key) {
       var p = key.split("-"), end = new Date(+p[0], +p[1], 1).getTime();
       var b = 0;
@@ -395,7 +395,7 @@
     var pts = vals.map(function (v, i) { return x(i) + "," + yv(v); }).join(" ");
     var area = "M" + x(0) + "," + yv(min) + " L" + pts.split(" ").join(" L") + " L" + x(n - 1) + "," + yv(min) + " Z";
 
-    // x 軸標籤：最多顯示約 6 個，避免擁擠
+    // x-axis labels: show ~6 at most to avoid crowding
     var step = Math.ceil(n / 6);
     var labels = "";
     for (var i = 0; i < n; i++) {
@@ -455,7 +455,7 @@
     var sorted = acc.transactions.slice().sort(function (a, b) { return a.ts - b.ts; });
     var running = 0;
     sorted.forEach(function (tx) { running += (tx.type === "withdraw") ? -tx.amount : tx.amount; tx._bal = roundTo(running, state.decimals); });
-    sorted.reverse(); // 新→舊
+    sorted.reverse(); // newest -> oldest
 
     var totalPages = Math.ceil(sorted.length / PAGE_SIZE);
     if (historyPage > totalPages - 1) historyPage = totalPages - 1;
@@ -493,7 +493,7 @@
     }
   }
 
-  // ================= 對話框 =================
+  // ================= Modals =================
   function openModal(title, bodyHtml, onOk, okText) {
     var modal = document.getElementById("modal");
     document.getElementById("modal-title").textContent = title;
@@ -501,8 +501,8 @@
     document.getElementById("modal-ok").textContent = okText || t("ok");
     document.getElementById("modal-cancel").textContent = t("cancel");
     modal.classList.remove("hidden");
-    document.body.classList.add("modal-open"); // 鎖住背景，避免捲動跑到主頁面
-    modal.onclick = function (e) { if (e.target === modal) closeModal(); }; // 點背景關閉
+    document.body.classList.add("modal-open"); // lock the background so scrolling doesn't reach the main page
+    modal.onclick = function (e) { if (e.target === modal) closeModal(); }; // tap backdrop to close
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("modal-ok").onclick = function () { if (onOk() !== false) closeModal(); };
   }
@@ -572,7 +572,7 @@
     var d = new Date(ts);
     return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
   }
-  // 爸爸模式：點一筆明細 → 修改金額／備註／日期，或刪除這一筆
+  // Parent mode: tap an entry to edit amount/note/date, or delete it
   function openEditTx(acc, tx) {
     if (!isParent()) return;
     var step = state.decimals > 0 ? (1 / Math.pow(10, state.decimals)) : 1;
@@ -646,7 +646,7 @@
       save(); toast(t("saved"));
     }, t("save"));
 
-    // 資料：匯出 / 備份 / 還原
+    // Data: export / backup / restore
     if (acc) document.getElementById("s-csv").onclick = exportCSV;
     document.getElementById("s-backup").onclick = exportBackup;
     document.getElementById("s-restore").onclick = function () { document.getElementById("s-file").click(); };
@@ -663,10 +663,10 @@
   }
 
   function toggleMode() {
-    if (isParent()) {                       // 爸爸模式 → 手動回到兒童模式（不需密碼）
+    if (isParent()) {                       // parent mode -> manually back to kid mode (no password)
       leaveParent(); render(); toast(t("backToChild")); return;
     }
-    if (!state.parentPin) {                  // 第一次使用：先設定爸爸密碼
+    if (!state.parentPin) {                  // first use: set the parent password
       openModal(t("setParentTitle"),
         '<div class="modal-body-row"><label>' + t("fieldSetParentPw") + '</label>' +
         '<input id="p-pw" type="password" inputmode="numeric" maxlength="' + NAME_MAX + '" /></div>' +
@@ -677,7 +677,7 @@
           state.parentPin = pw.slice(0, NAME_MAX);
           enterParent(); save(); toast(t("enteredParent"));
         }, t("ok"));
-    } else {                                 // 已有密碼：認證
+    } else {                                 // password exists: authenticate
       openModal(t("enterParentTitle"),
         '<div class="modal-body-row"><label>' + t("fieldEnterPin") + '</label>' +
         '<input id="p-pw" type="password" inputmode="numeric" /></div>',
@@ -698,7 +698,7 @@
     toastTimer = setTimeout(function () { el.classList.add("hidden"); }, 2200);
   }
 
-  // ================= 儲存層 =================
+  // ================= Storage layer =================
   function save() {
     if (applyingRemote) { render(); return; }
     render();
@@ -731,7 +731,7 @@
     loadFirebaseSdk(function () {
       firebase.initializeApp(self.config);
       self.db = firebase.firestore();
-      // 開啟離線快取：短暫斷線時資料仍可讀寫，恢復後自動補傳（多分頁時可能失敗，忽略即可）
+      // Enable offline cache: data stays readable/writable during brief drops and auto-syncs on reconnect (may fail with multiple tabs; ignore)
       try { self.db.enablePersistence({ synchronizeTabs: true }).catch(function () {}); } catch (e) {}
       self.auth = firebase.auth();
       isCloud = true;
@@ -742,14 +742,14 @@
         document.getElementById("app").classList.remove("hidden");
         self.docRef = self.db.collection("banks").doc(user.uid + "_" + BANK_ID);
         self.docRef.onSnapshot(function (snap) {
-          setSyncStatus(true); // 收到快照 = 連線正常
+          setSyncStatus(true); // got a snapshot = connection healthy
           if (snap.exists && snap.data().state) { applyingRemote = true; state = safeParse(snap.data().state, state || defaultState()); migrate(); applyingRemote = false; }
           else if (!state) { state = defaultState(); }
           var res = accrueInterest();
           if (res.changed) { store.save(state); if (res.credited > 0) toast(t("creditedToast", nf(res.credited))); }
           render();
         }, function (err) {
-          // 讀取被拒（額度用盡 / 權限 / 連線異常）
+          // read rejected (quota exhausted / permission / connection error)
           setSyncStatus(false);
         });
         onReady(true);
@@ -761,7 +761,7 @@
     this.docRef.set({ state: JSON.stringify(s), updatedAt: Date.now() })
       .then(function () { setSyncStatus(true); })
       .catch(function () {
-        // 寫入被拒（最常見：打到 Firestore 每日額度上限）→ 明確告知使用者
+        // write rejected (most commonly the Firestore daily quota) -> tell the user clearly
         if (syncOk) toast(t("syncFailed"));
         setSyncStatus(false);
       });
@@ -782,8 +782,9 @@
       err.textContent = "";
       if (!email || pw.length < 6) { err.textContent = t("loginNeed"); return; }
       fbStore.auth.signInWithEmailAndPassword(email, pw).catch(function (e) {
-        // 新版 Firebase 開了「Email 列舉保護」時，不存在的帳號會回 invalid-credential 而非 user-not-found，
-        // 所以這幾種錯誤都嘗試「自動註冊」；若其實是帳號已存在（密碼打錯），再提示密碼錯誤。
+        // With "email enumeration protection" on (default in newer projects), a non-existent
+        // account returns invalid-credential instead of user-not-found. So for these errors we
+        // try auto-registration; if the account already exists (wrong password), report that.
         var maybeNew = e.code === "auth/user-not-found" ||
                        e.code === "auth/invalid-credential" ||
                        e.code === "auth/invalid-login-credentials";
@@ -811,7 +812,7 @@
     })();
   }
 
-  // ================= 啟動 =================
+  // ================= Boot =================
   function hasFirebaseConfig() {
     return typeof firebaseConfig === "object" && firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId;
   }
@@ -824,12 +825,12 @@
     document.getElementById("pager-prev").onclick = function () { historyPage--; renderHistory(); };
     document.getElementById("pager-next").onclick = function () { historyPage++; renderHistory(); };
 
-    // 任何互動都更新活動時間（給爸爸模式閒置自動上鎖用）
+    // any interaction refreshes the activity time (for parent-mode idle auto-lock)
     ["click", "keydown", "touchstart"].forEach(function (ev) {
       document.addEventListener(ev, function () { lastActivity = Date.now(); }, true);
     });
 
-    // 裝置離線 / 恢復連線時，更新雲端徽章
+    // update the cloud badge when the device goes offline / comes back
     window.addEventListener("offline", function () { if (isCloud) setSyncStatus(false); });
     window.addEventListener("online", function () { if (isCloud) setSyncStatus(true); });
 
