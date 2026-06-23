@@ -4,6 +4,8 @@ var I18N = {
     brand: "爸爸銀行",
     modeLocal: "本機模式",
     modeCloud: "雲端同步",
+    syncError: "⚠️ 同步異常",
+    syncFailed: "⚠️ 同步失敗，這筆可能沒存到雲端，請稍後再試",
     // 登入
     loginHint: "雲端同步模式：請用家庭帳號登入，所有裝置共用同一份資料。",
     pwPlaceholder: "密碼（至少 6 碼）",
@@ -130,6 +132,8 @@ var I18N = {
     brand: "Papa Bank",
     modeLocal: "Local",
     modeCloud: "Synced",
+    syncError: "⚠️ Sync issue",
+    syncFailed: "⚠️ Sync failed — this entry may not be saved to the cloud; try again later",
     loginHint: "Cloud sync: sign in with one family account; all devices share the same data.",
     pwPlaceholder: "Password (min 6 chars)",
     loginBtn: "Sign in / Sign up",

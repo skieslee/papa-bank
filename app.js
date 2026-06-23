@@ -31,6 +31,7 @@
   var historyPage = 0;
   var parentMode = false;        // 只存記憶體：重新整理 / 重開都會回到兒童模式
   var lastActivity = Date.now(); // 給「閒置自動上鎖」用
+  var syncOk = true;             // 雲端同步是否正常（false = 寫入/連線失敗，例如打到額度上限）
 
   // ================= i18n =================
   function getLang() {
@@ -244,12 +245,26 @@
     document.getElementById("monthly-title").textContent = t("monthlyTitle");
     document.getElementById("history-title").textContent = t("historyTitle");
     document.getElementById("lang-btn").textContent = getLang() === "en" ? "EN" : "中";
-    document.getElementById("mode-badge").textContent = isCloud ? t("modeCloud") : t("modeLocal");
+    updateModeBadge();
     // 登入畫面
     document.getElementById("login-brand").textContent = t("brand");
     document.getElementById("login-hint").textContent = t("loginHint");
     document.getElementById("login-pw").placeholder = t("pwPlaceholder");
     document.getElementById("login-btn").textContent = t("loginBtn");
+  }
+
+  // 右上徽章：本機 / 雲端同步 / 同步異常
+  function updateModeBadge() {
+    var b = document.getElementById("mode-badge");
+    if (!b) return;
+    if (!isCloud) { b.textContent = t("modeLocal"); b.classList.remove("cloud", "sync-error"); return; }
+    if (syncOk) { b.textContent = t("modeCloud"); b.classList.add("cloud"); b.classList.remove("sync-error"); }
+    else { b.textContent = t("syncError"); b.classList.add("sync-error"); b.classList.remove("cloud"); }
+  }
+  function setSyncStatus(ok) {
+    if (ok === syncOk) return;
+    syncOk = ok;
+    updateModeBadge();
   }
 
   function render() {
@@ -716,26 +731,41 @@
     loadFirebaseSdk(function () {
       firebase.initializeApp(self.config);
       self.db = firebase.firestore();
+      // 開啟離線快取：短暫斷線時資料仍可讀寫，恢復後自動補傳（多分頁時可能失敗，忽略即可）
+      try { self.db.enablePersistence({ synchronizeTabs: true }).catch(function () {}); } catch (e) {}
       self.auth = firebase.auth();
       isCloud = true;
-      document.getElementById("mode-badge").classList.add("cloud");
+      updateModeBadge();
       self.auth.onAuthStateChanged(function (user) {
         if (!user) { showLogin(self); return; }
         document.getElementById("login").classList.add("hidden");
         document.getElementById("app").classList.remove("hidden");
         self.docRef = self.db.collection("banks").doc(user.uid + "_" + BANK_ID);
         self.docRef.onSnapshot(function (snap) {
+          setSyncStatus(true); // 收到快照 = 連線正常
           if (snap.exists && snap.data().state) { applyingRemote = true; state = safeParse(snap.data().state, state || defaultState()); migrate(); applyingRemote = false; }
           else if (!state) { state = defaultState(); }
           var res = accrueInterest();
           if (res.changed) { store.save(state); if (res.credited > 0) toast(t("creditedToast", nf(res.credited))); }
           render();
+        }, function (err) {
+          // 讀取被拒（額度用盡 / 權限 / 連線異常）
+          setSyncStatus(false);
         });
         onReady(true);
       });
     }, function () { toast("Firebase load failed → local mode"); isCloud = false; store = new LocalStore(); store.init(function () { showApp(); afterLoadAccrue(); }); });
   };
-  FirebaseStore.prototype.save = function (s) { if (this.docRef) this.docRef.set({ state: JSON.stringify(s), updatedAt: Date.now() }); };
+  FirebaseStore.prototype.save = function (s) {
+    if (!this.docRef) return;
+    this.docRef.set({ state: JSON.stringify(s), updatedAt: Date.now() })
+      .then(function () { setSyncStatus(true); })
+      .catch(function () {
+        // 寫入被拒（最常見：打到 Firestore 每日額度上限）→ 明確告知使用者
+        if (syncOk) toast(t("syncFailed"));
+        setSyncStatus(false);
+      });
+  };
 
   function showApp() {
     document.getElementById("login").classList.add("hidden");
@@ -798,6 +828,10 @@
     ["click", "keydown", "touchstart"].forEach(function (ev) {
       document.addEventListener(ev, function () { lastActivity = Date.now(); }, true);
     });
+
+    // 裝置離線 / 恢復連線時，更新雲端徽章
+    window.addEventListener("offline", function () { if (isCloud) setSyncStatus(false); });
+    window.addEventListener("online", function () { if (isCloud) setSyncStatus(true); });
 
     setInterval(function () {
       if (!state) return;
