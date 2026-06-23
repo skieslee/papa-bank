@@ -4,6 +4,8 @@
 
 A pretend "bank" that helps kids learn about money and the habit of saving.
 
+<p align="center"><img src="screenshots/main.svg" alt="papa-bank main screen" width="320"></p>
+
 **Features**
 - Deposit, withdraw (blocked when the balance is too low), and a transaction history
 - Set an annual interest rate with **automatic interest** (compound; it's back-filled on the next open even if the app was closed)
